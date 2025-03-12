@@ -1,0 +1,141 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import { API_BASE_URL, isValidUrl, CrawlResult } from "@/lib/utils";
+
+interface CrawlFormProps {
+  onResultReceived: (result: CrawlResult) => void;
+}
+
+export function CrawlForm({ onResultReceived }: CrawlFormProps) {
+  const [url, setUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate URL format
+    if (!url) {
+      toast.error("Please enter a URL");
+      return;
+    }
+
+    // Add http:// prefix if missing
+    let processedUrl = url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      processedUrl = `https://${url}`;
+    }
+
+    if (!isValidUrl(processedUrl)) {
+      toast.error("Please enter a valid URL");
+      return;
+    }
+
+    setIsLoading(true);
+    setProgress(0);
+
+    try {
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => Math.min(prev + 10, 90));
+      }, 500);
+
+      const response = await fetch(`${API_BASE_URL}/api/crawl`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: processedUrl }),
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        throw new Error(
+          `Crawling failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      // For demo, create a mock result if API isn't available yet
+      // Remove this mock when backend is ready
+      const mockResult: CrawlResult = {
+        url: processedUrl,
+        status: 200,
+        title: "Sample Page Title",
+        description:
+          "This is a sample meta description for the crawled page. In a real scenario, this would be extracted from the page's meta tags.",
+        loadTime: 350,
+        wordCount: 1250,
+        metaTags: {
+          "og:title": "Sample Title for Social Media",
+          "og:description": "Sample description for social media",
+          "twitter:card": "summary",
+        },
+        links: [
+          { url: "https://example.com/about", text: "About", isExternal: false },
+          { url: "https://example.com/contact", text: "Contact", isExternal: false },
+          { url: "https://twitter.com", text: "Twitter", isExternal: true },
+        ],
+      };
+
+      // Use actual response data when available
+      // const result = await response.json();
+      const result = mockResult;
+
+      onResultReceived(result);
+      toast.success("URL crawled successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to crawl URL");
+    } finally {
+      setIsLoading(false);
+      setProgress(100);
+
+      // Reset progress after delay
+      setTimeout(() => {
+        setProgress(0);
+      }, 1000);
+    }
+  };
+
+  return (
+    <div className="bg-card p-6 rounded-lg shadow-md mb-8 border border-border">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="url" className="text-sm font-medium">
+            Enter URL
+          </Label>
+          <Input
+            id="url"
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://example.com"
+            disabled={isLoading}
+          />
+        </div>
+
+        <Button
+          variant="default"
+          size="lg"
+          type="submit"
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? "Crawling..." : "Start Crawling"}
+        </Button>
+
+        {isLoading && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Crawling in progress...</span>
+              <span>{progress}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+        )}
+      </form>
+    </div>
+  );
+}
