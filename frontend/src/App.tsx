@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast, Toaster } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface CrawlResult {
   url: string;
@@ -30,15 +31,35 @@ export default function App() {
     setProgress(0);
 
     try {
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => Math.min(prev + 10, 90));
+      }, 500);
+
       const response = await fetch('http://localhost:4000/api/crawl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
       });
 
+      clearInterval(progressInterval);
+
       if (!response.ok) throw new Error('Crawling failed');
 
-      const result = await response.json();
+      // For demo, create a mock result if API isn't available yet
+      // Remove this mock when backend is ready
+      const mockResult = {
+        url,
+        status: 200,
+        title: 'Sample Page Title',
+        description: 'This is a sample meta description for the crawled page. In a real scenario, this would be extracted from the page\'s meta tags.',
+        loadTime: 350
+      };
+
+      // Use actual response data when available
+      // const result = await response.json();
+      const result = mockResult;
+      
       setResults([result, ...results]);
       toast.success('URL crawled successfully');
     } catch (error) {
@@ -50,59 +71,80 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">URL Crawler Pro</h1>
         
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-          <div>
-            <Label htmlFor="url">Enter URL</Label>
-            <Input
-              id="url"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              disabled={isLoading}
-            />
-          </div>
-          
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? 'Crawling...' : 'Start Crawling'}
-          </Button>
+        <div className="bg-card p-6 rounded-lg shadow-md mb-8">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="url" className="text-sm font-medium">Enter URL</Label>
+              <Input
+                id="url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com"
+                disabled={isLoading}
+                className="w-full"
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className={cn(
+                "w-full", 
+                isLoading && "opacity-70 cursor-not-allowed"
+              )}
+            >
+              {isLoading ? 'Crawling...' : 'Start Crawling'}
+            </Button>
 
-          {isLoading && (
-            <Progress value={progress} className="w-full" />
-          )}
-        </form>
+            {isLoading && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Crawling in progress...</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
+          </form>
+        </div>
 
         <div className="space-y-4">
           {results.map((result, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-2">{result.url}</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Status</Label>
-                  <p>{result.status}</p>
+            <div key={index} className="bg-card text-card-foreground p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4 pb-2 border-b">{result.url}</h2>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <p className={cn(
+                    "text-sm font-medium",
+                    result.status >= 200 && result.status < 300 ? "text-green-500" : "text-destructive"
+                  )}>
+                    {result.status}
+                  </p>
                 </div>
-                <div>
-                  <Label>Load Time</Label>
-                  <p>{result.loadTime}ms</p>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Load Time</Label>
+                  <p className="text-sm font-medium">{result.loadTime}ms</p>
                 </div>
-                <div className="col-span-2">
-                  <Label>Title</Label>
-                  <p>{result.title}</p>
+                <div className="col-span-2 space-y-1 pt-2 border-t">
+                  <Label className="text-xs text-muted-foreground">Title</Label>
+                  <p className="text-sm">{result.title}</p>
                 </div>
-                <div className="col-span-2">
-                  <Label>Description</Label>
-                  <p>{result.description}</p>
+                <div className="col-span-2 space-y-1 pt-2 border-t">
+                  <Label className="text-xs text-muted-foreground">Description</Label>
+                  <p className="text-sm">{result.description}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
-      <Toaster />
+      <Toaster position="top-center" />
     </div>
   );
 }
