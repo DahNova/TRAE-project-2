@@ -31,14 +31,14 @@ export function ResultCard({ result }: ResultCardProps) {
           </p>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Load Time</Label>
-          <p className="text-sm font-medium">{formatLoadTime(result.loadTime)}</p>
+          <Label className="text-xs text-muted-foreground">Response Time</Label>
+          <p className="text-sm font-medium">{formatLoadTime(result.responseTime)}</p>
         </div>
         
-        {result.wordCount && (
+        {result.seoData?.wordCount && (
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Word Count</Label>
-            <p className="text-sm font-medium">{result.wordCount}</p>
+            <p className="text-sm font-medium">{result.seoData.wordCount}</p>
           </div>
         )}
         
@@ -52,16 +52,67 @@ export function ResultCard({ result }: ResultCardProps) {
           <p className="text-sm">{result.description}</p>
         </div>
 
-        {result.metaTags && Object.keys(result.metaTags).length > 0 && (
+        {result.seoData && (
           <div className="col-span-2 space-y-2 pt-2 border-t">
-            <Label className="text-xs text-muted-foreground">Meta Tags</Label>
-            <div className="grid grid-cols-1 gap-1">
-              {Object.entries(result.metaTags).map(([key, value]) => (
-                <div key={key} className="flex text-xs">
-                  <span className="font-medium min-w-32">{key}:</span>
-                  <span className="text-muted-foreground truncate">{value}</span>
-                </div>
-              ))}
+            <Label className="text-xs text-muted-foreground">SEO Analysis</Label>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex">
+                <span className="font-medium min-w-32">H1 Tags:</span>
+                <span className="text-muted-foreground">{result.seoData.h1Count}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">H2 Tags:</span>
+                <span className="text-muted-foreground">{result.seoData.h2Count}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Images:</span>
+                <span className="text-muted-foreground">{result.seoData.imageCount}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Missing Alt:</span>
+                <span className={cn(
+                  "text-muted-foreground", 
+                  result.seoData.imagesWithoutAlt > 0 ? "text-destructive" : ""
+                )}>
+                  {result.seoData.imagesWithoutAlt}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Viewport:</span>
+                <span className={cn(
+                  "text-muted-foreground",
+                  result.seoData.hasViewport ? "text-green-500" : "text-destructive"
+                )}>
+                  {result.seoData.hasViewport ? "Yes" : "No"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Open Graph:</span>
+                <span className={cn(
+                  "text-muted-foreground",
+                  result.seoData.hasOpenGraph ? "text-green-500" : "text-destructive"
+                )}>
+                  {result.seoData.hasOpenGraph ? "Yes" : "No"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Twitter Card:</span>
+                <span className={cn(
+                  "text-muted-foreground",
+                  result.seoData.hasTwitterCard ? "text-green-500" : "text-destructive"
+                )}>
+                  {result.seoData.hasTwitterCard ? "Yes" : "No"}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="font-medium min-w-32">Schema:</span>
+                <span className={cn(
+                  "text-muted-foreground",
+                  result.seoData.hasSchema ? "text-green-500" : "text-destructive"
+                )}>
+                  {result.seoData.hasSchema ? "Yes" : "No"}
+                </span>
+              </div>
             </div>
           </div>
         )}

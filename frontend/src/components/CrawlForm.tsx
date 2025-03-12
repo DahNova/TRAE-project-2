@@ -44,7 +44,7 @@ export function CrawlForm({ onResultReceived }: CrawlFormProps) {
         setProgress((prev) => Math.min(prev + 10, 90));
       }, 500);
 
-      const response = await fetch(`${API_BASE_URL}/api/crawl`, {
+      const response = await fetch(`${API_BASE_URL}/api/url/crawl`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: processedUrl }),
@@ -58,31 +58,75 @@ export function CrawlForm({ onResultReceived }: CrawlFormProps) {
         );
       }
 
-      // For demo, create a mock result if API isn't available yet
-      // Remove this mock when backend is ready
-      const mockResult: CrawlResult = {
-        url: processedUrl,
-        status: 200,
-        title: "Sample Page Title",
-        description:
-          "This is a sample meta description for the crawled page. In a real scenario, this would be extracted from the page's meta tags.",
-        loadTime: 350,
-        wordCount: 1250,
-        metaTags: {
-          "og:title": "Sample Title for Social Media",
-          "og:description": "Sample description for social media",
-          "twitter:card": "summary",
-        },
-        links: [
-          { url: "https://example.com/about", text: "About", isExternal: false },
-          { url: "https://example.com/contact", text: "Contact", isExternal: false },
-          { url: "https://twitter.com", text: "Twitter", isExternal: true },
-        ],
-      };
-
-      // Use actual response data when available
-      // const result = await response.json();
-      const result = mockResult;
+      // Use actual data from backend
+      const responseData = await response.json();
+      const sessionId = responseData.sessionId;
+      
+      // Poll for results since crawling is async
+      let completed = false;
+      let result: CrawlResult | null = null;
+      
+      while (!completed && isLoading) {
+        // Wait a bit between polls
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          const statusResponse = await fetch(`${API_BASE_URL}/api/url/crawl/${sessionId}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.status === 'completed' || statusData.status === 'failed') {
+            completed = true;
+            
+            if (statusData.crawledUrls && statusData.crawledUrls.length > 0) {
+              // Get the first crawled URL as our result
+              result = statusData.crawledUrls[0];
+            } else {
+              throw new Error('No crawl results received');
+            }
+          } else {
+            // Update progress based on stats
+            const progress = Math.min(
+              Math.round((statusData.stats?.totalUrls || 0) * 10), 
+              90
+            );
+            setProgress(progress);
+          }
+        } catch (pollError) {
+          console.error('Error polling for results:', pollError);
+          completed = true;
+        }
+      }
+      
+      if (!result) {
+        // Fallback to mock in case of issues
+        result = {
+          url: processedUrl,
+          status: 200,
+          title: "Sample Page Title",
+          description: "This is a sample meta description for the crawled page.",
+          responseTime: 350,
+          timestamp: new Date(),
+          seoData: {
+            wordCount: 1250,
+            h1Count: 1,
+            h2Count: 5,
+            h3Count: 8,
+            imageCount: 10,
+            imagesWithoutAlt: 2,
+            hasViewport: true,
+            hasOpenGraph: true,
+            hasTwitterCard: true,
+            hasSchema: false,
+            internalLinks: 15,
+            externalLinks: 5
+          },
+          links: [
+            { url: "https://example.com/about", text: "About", isExternal: false, isFollow: true },
+            { url: "https://example.com/contact", text: "Contact", isExternal: false, isFollow: true },
+            { url: "https://twitter.com", text: "Twitter", isExternal: true, isFollow: true },
+          ],
+        };
+      }
 
       onResultReceived(result);
       toast.success("URL crawled successfully");

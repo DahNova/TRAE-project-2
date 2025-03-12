@@ -10,19 +10,45 @@ export const API_BASE_URL = 'http://localhost:4000';
 export interface CrawlResult {
   url: string;
   status: number;
-  title: string;
-  description: string;
-  loadTime: number;
+  title?: string;
+  description?: string;
+  h1?: string;
+  responseTime: number;
+  contentLength?: number;
+  contentType?: string;
+  redirectChain?: string[];
   
-  // Additional potential SEO data
-  headers?: Record<string, string>;
-  metaTags?: Record<string, string>;
-  wordCount?: number;
+  // SEO data
+  seoData?: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+    canonicalUrl?: string;
+    h1Count: number;
+    h2Count: number;
+    h3Count: number;
+    imageCount: number;
+    imagesWithoutAlt: number;
+    wordCount: number;
+    metaRobots?: string;
+    hasViewport: boolean;
+    hasOpenGraph: boolean;
+    hasTwitterCard: boolean;
+    hasSchema: boolean;
+    internalLinks: number;
+    externalLinks: number;
+    brokenLinks?: { url: string; status: number }[];
+  };
+  
   links?: Array<{
     url: string;
     text: string;
     isExternal: boolean;
+    isFollow: boolean;
   }>;
+  
+  errors?: string[];
+  timestamp: Date;
 }
 
 // Helper to show formatted time
