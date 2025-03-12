@@ -77,27 +77,34 @@ export class HttpService {
     }
 
     try {
-      // Track redirects
+      // Initialize redirect chain if needed
       if (options.followRedirects) {
-        const originalAdapter = axios.defaults.adapter;
-        axios.defaults.adapter = async (config) => {
-          // @ts-ignore - we know originalAdapter exists
-          const response = await originalAdapter(config);
+        // Custom axios interceptor to track redirects
+        const interceptorId = axios.interceptors.response.use(response => {
           if (response.status >= 300 && response.status < 400 && response.headers.location) {
             redirectChain.push(response.config.url as string);
           }
           return response;
+        });
+        
+        // Make the request
+        const response: AxiosResponse = await axios.get(url, axiosConfig);
+        
+        // Remove the interceptor after request completes
+        axios.interceptors.response.eject(interceptorId);
+        
+        return {
+          data: response.data,
+          status: response.status,
+          headers: response.headers as Record<string, string>,
+          redirectChain,
+          responseTime: Date.now() - startTime,
+          url: response.config.url || url,
         };
       }
 
-      // Make the request
+      // Make the request (non-redirect tracking path)
       const response: AxiosResponse = await axios.get(url, axiosConfig);
-      
-      // Reset adapter if we modified it
-      if (options.followRedirects) {
-        // @ts-ignore - we're just resetting the adapter
-        axios.defaults.adapter = undefined;
-      }
 
       const responseTime = Date.now() - startTime;
       
