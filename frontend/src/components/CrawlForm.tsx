@@ -116,35 +116,16 @@ export function CrawlForm({ onResultReceived }: CrawlFormProps) {
         }
       }
       
+      // If we don't have a valid result after polling, show an error
       if (!result) {
-        // Fallback to mock in case of issues
-        result = {
-          url: processedUrl,
-          status: 200,
-          title: "Sample Page Title",
-          description: "This is a sample meta description for the crawled page.",
-          responseTime: 350,
-          timestamp: new Date(),
-          seoData: {
-            wordCount: 1250,
-            h1Count: 1,
-            h2Count: 5,
-            h3Count: 8,
-            imageCount: 10,
-            imagesWithoutAlt: 2,
-            hasViewport: true,
-            hasOpenGraph: true,
-            hasTwitterCard: true,
-            hasSchema: false,
-            internalLinks: 15,
-            externalLinks: 5
-          },
-          links: [
-            { url: "https://example.com/about", text: "About", isExternal: false, isFollow: true },
-            { url: "https://example.com/contact", text: "Contact", isExternal: false, isFollow: true },
-            { url: "https://twitter.com", text: "Twitter", isExternal: true, isFollow: true },
-          ],
-        };
+        toast.error("Failed to get crawl results. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Convert any timestamp strings to Date objects if needed
+      if (typeof result.timestamp === 'string') {
+        result.timestamp = new Date(result.timestamp);
       }
 
       onResultReceived(result);
