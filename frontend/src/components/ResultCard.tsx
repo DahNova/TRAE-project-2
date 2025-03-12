@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { CrawlResult, formatLoadTime, cn } from "@/lib/utils";
 
 interface ResultCardProps {
@@ -13,16 +14,9 @@ export function ResultCard({ result }: ResultCardProps) {
       <div className="flex justify-between items-start mb-4 pb-2 border-b">
         <h2 className="text-xl font-semibold truncate flex-1">{result.url}</h2>
         <div className="flex items-center space-x-2">
-          <span 
-            className={cn(
-              "inline-flex h-6 items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-              isSuccess 
-                ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400" 
-                : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-            )}
-          >
+          <Badge variant={isSuccess ? "success" : "destructive"}>
             {isSuccess ? "Success" : "Failed"}
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -80,10 +74,10 @@ export function ResultCard({ result }: ResultCardProps) {
             <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto text-xs">
               {result.links.map((link, i) => (
                 <div key={i} className="flex items-center">
-                  <span className={cn(
-                    "mr-2 h-2 w-2 rounded-full",
-                    link.isExternal ? "bg-amber-500" : "bg-green-500"
-                  )}></span>
+                  <Badge 
+                    variant={link.isExternal ? "warning" : "success"} 
+                    className="mr-2 w-2 h-2 p-0"
+                  />
                   <span className="truncate">{link.text || link.url}</span>
                 </div>
               ))}
