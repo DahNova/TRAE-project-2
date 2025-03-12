@@ -1,62 +1,37 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
-import { createLogger, format, transports } from 'winston';
-
-// Load environment variables
-dotenv.config();
-
-// Configure logger
-const logger = createLogger({
-  format: format.combine(
-    format.timestamp(),
-    format.json()
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: 'error.log', level: 'error' }),
-    new transports.File({ filename: 'combined.log' })
-  ]
-});
+import { config } from './config/environment';
+import { logger } from './config/logger';
+import urlRoutes from './routes/urlRoutes';
+import { errorHandler, notFoundHandler } from './middleware/errorMiddleware';
 
 // Initialize express app
 const app = express();
 
-// Configure rate limiter
-const rateLimiter = new RateLimiterMemory({
-  points: 100, // Number of points
-  duration: 15 * 60, // Per 15 minutes
-});
-
-// Rate limiting middleware
-const limiter = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  try {
-    await rateLimiter.consume(req.ip);
-    next();
-  } catch (error) {
-    res.status(429).json({ error: 'Too many requests' });
-  }
-};
-
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(limiter);
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api/url', urlRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ 
+    status: 'ok',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: config.nodeEnv
+  });
 });
 
-// Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 4000;
+const PORT = config.port;
 app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT} in ${config.nodeEnv} mode`);
+  logger.info(`Health check available at http://localhost:${PORT}/health`);
 });
