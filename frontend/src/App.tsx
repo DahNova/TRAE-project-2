@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface CrawlResult {
@@ -67,6 +67,11 @@ export default function App() {
     } finally {
       setIsLoading(false);
       setProgress(100);
+
+      // Reset progress after delay
+      setTimeout(() => {
+        setProgress(0);
+      }, 1000);
     }
   };
 
@@ -75,7 +80,7 @@ export default function App() {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold text-center mb-8">URL Crawler Pro</h1>
         
-        <div className="bg-card p-6 rounded-lg shadow-md mb-8">
+        <div className="bg-card p-6 rounded-lg shadow-md mb-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="url" className="text-sm font-medium">Enter URL</Label>
@@ -86,17 +91,15 @@ export default function App() {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com"
                 disabled={isLoading}
-                className="w-full"
               />
             </div>
             
             <Button 
+              variant="default"
+              size="lg"
               type="submit" 
-              disabled={isLoading} 
-              className={cn(
-                "w-full", 
-                isLoading && "opacity-70 cursor-not-allowed"
-              )}
+              disabled={isLoading}
+              className="w-full"
             >
               {isLoading ? 'Crawling...' : 'Start Crawling'}
             </Button>
@@ -115,7 +118,7 @@ export default function App() {
 
         <div className="space-y-4">
           {results.map((result, index) => (
-            <div key={index} className="bg-card text-card-foreground p-6 rounded-lg shadow-md">
+            <div key={index} className="bg-card text-card-foreground p-6 rounded-lg shadow-md border border-border">
               <h2 className="text-xl font-semibold mb-4 pb-2 border-b">{result.url}</h2>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
@@ -144,7 +147,6 @@ export default function App() {
           ))}
         </div>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 }
