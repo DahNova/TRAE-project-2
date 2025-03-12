@@ -65,22 +65,41 @@ export function CrawlForm({ onResultReceived }: CrawlFormProps) {
       // Poll for results since crawling is async
       let completed = false;
       let result: CrawlResult | null = null;
+      let pollCount = 0;
+      const maxPolls = 30; // Maximum number of poll attempts
       
-      while (!completed && isLoading) {
+      while (!completed && isLoading && pollCount < maxPolls) {
         // Wait a bit between polls
         await new Promise(resolve => setTimeout(resolve, 1000));
+        pollCount++;
         
         try {
+          console.log(`Polling for results (attempt ${pollCount})...`);
           const statusResponse = await fetch(`${API_BASE_URL}/api/url/crawl/${sessionId}`);
+          
+          if (!statusResponse.ok) {
+            throw new Error(`Status response error: ${statusResponse.status}`);
+          }
+          
           const statusData = await statusResponse.json();
+          console.log('Poll response:', statusData);
           
           if (statusData.status === 'completed' || statusData.status === 'failed') {
             completed = true;
             
             if (statusData.crawledUrls && statusData.crawledUrls.length > 0) {
               // Get the first crawled URL as our result
-              result = statusData.crawledUrls[0];
+              const firstUrl = statusData.crawledUrls[0];
+              console.log('First crawled URL:', firstUrl);
+              
+              // Convert the timestamp string to Date object if needed
+              if (typeof firstUrl.timestamp === 'string') {
+                firstUrl.timestamp = new Date(firstUrl.timestamp);
+              }
+              
+              result = firstUrl;
             } else {
+              console.error('No crawl results received in completed response');
               throw new Error('No crawl results received');
             }
           } else {
