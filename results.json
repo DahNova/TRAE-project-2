@@ -1,0 +1,18 @@
+{
+  "summary": {
+    "total_urls": 1,
+    "total_time": 21.07,
+    "urls_per_second": 0.05,
+    "start_time": "2025-03-13 16:34:51",
+    "end_time": "2025-03-13 16:35:12",
+    "status_counts": {}
+  },
+  "results": [
+    {
+      "url": "https://www.dexanet.com/",
+      "status": "error",
+      "error": "Client error: Cannot connect to host www.dexanet.com:443 ssl:default [Periodo di timeout del semaforo scaduto]",
+      "depth": 0
+    }
+  ]
+}
